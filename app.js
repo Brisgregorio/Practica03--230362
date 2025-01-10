@@ -1,0 +1,87 @@
+import express from 'express';
+import session from 'express-session';
+import moment from 'moment-timezone'
+
+const app = express();
+
+// Configuración del middleware de sesiones
+app.use(
+    session({
+        secret: 'p3-BNGG#rocoloco-sesionespersistentes', // Clave secreta para firmar cookies
+        resave: false, // No guardar sesión si no hay cambios
+        saveUninitialized: true, // Guardar sesiones nuevas aunque estén vacías
+        cookie: {
+            maxAge: 24 * 60 * 60 * 1000, // 1 día en milisegundos
+            httpOnly: true, // Solo accesible por HTTP (más seguro)
+            secure: false, // Cambiar a true si usas HTTPS
+        },
+    })
+);
+
+// Ruta para iniciar sesión
+app.get('/iniciar-sesion', (req, res) => {
+    if (!req.session.inicio) {
+        req.session.inicio = new Date(); // Fecha de inicio de sesión
+        req.session.ultimoAcceso = new Date(); // Última consulta inicial
+        res.send('Sesión iniciada');
+    } else {
+        res.send('La sesión ya está activa');
+    }
+});
+
+// Ruta para actualizar la fecha de última consulta
+app.get('/actualizar', (req, res) => {
+    if (req.session.inicio) {
+        req.session.ultimoAcceso = new Date();
+        res.send('Fecha de última consulta actualizada');
+    } else {
+        res.send('No hay una sesión activa');
+    }
+});
+
+// Ruta para ver el estado de la sesión
+app.get('/estado-sesion', (req, res) => {
+    if (req.session.inicio) {
+        const inicio = req.session.inicio;
+        const ultimoAcceso = req.session.ultimoAcceso;
+        const ahora = new Date();
+
+        // Calcular la antigüedad de la sesión
+        const antiguedadMs = ahora - inicio;
+        const horas = Math.floor(antiguedadMs / (1000 * 60 * 60));
+        const minutos = Math.floor((antiguedadMs % (1000 * 60 * 60)) / (1000 * 60));
+        const segundos = Math.floor((antiguedadMs % (1000 * 60)) / 1000);
+
+        //convertimos la fecha al uso horario de CDMX
+
+        res.json({
+            mensaje: 'Estado de la sesión',
+            sesionID: req.sessionID,
+            inicio: inicio.toISOString(),
+            ultimoAcceso: ultimoAcceso.toISOString(),
+            antiguedad: `${horas} horas, ${minutos} minutos, ${segundos} segundos`,
+        });
+    } else {
+        res.send('No hay una sesión activa');
+    }
+});
+
+// Ruta para cerrar la sesión
+app.get('/cerrar-sesion', (req, res) => {
+    if (req.session) {
+        req.session.destroy((err) => {
+            if (err) {
+                return res.status(500).send('Error al cerrar la sesión');
+            }
+            res.send('Sesión cerrada correctamente');
+        });
+    } else {
+        res.send('No hay una sesión activa para cerrar');
+    }
+});
+
+// Iniciar servidor
+const PORT = 3000;
+app.listen(PORT, () => {
+    console.log(`Servidor ejecutándose en http://localhost:${PORT}`);
+});
