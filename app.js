@@ -53,6 +53,8 @@ app.get('/estado-sesion', (req, res) => {
         const segundos = Math.floor((antiguedadMs % (1000 * 60)) / 1000);
 
         //convertimos la fecha al uso horario de CDMX
+        const inicioCDMX= moment(inicio).tz('America/Mexico_City').format('YYYY-MM-DD HH:mm:ss');
+        const ultimoCDMX= moment(ultimoAcceso).tz('America/mexico_City').format('YYYY-MM-DD HH:mm:ss');
 
         res.json({
             mensaje: 'Estado de la sesión',
