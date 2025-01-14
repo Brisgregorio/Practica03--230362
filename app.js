@@ -40,33 +40,38 @@ app.get('/actualizar', (req, res) => {
 });
 
 // Ruta para ver el estado de la sesión
-app.get('/estado-sesion', (req, res) => {
-    if (req.session.inicio) {
-        const inicio = req.session.inicio;
-        const ultimoAcceso = req.session.ultimoAcceso;
+app.get('/estado-sesion', (req, res) => { 
+    if (req.session.inicio) { 
+        const inicio = new Date(req.session.inicio); // Convertimos a objeto Date
+        const ultimoAcceso = new Date(req.session.ultimoAcceso); // Convertimos a objeto Date
         const ahora = new Date();
 
-        // Calcular la antigüedad de la sesión
+        if (isNaN(inicio.getTime()) || isNaN(ultimoAcceso.getTime())) {
+            return res.status(400).json({ mensaje: 'Datos de sesión inválidos.' });
+        }
+
+        // Calcular la antigüedad de la cuenta
         const antiguedadMs = ahora - inicio;
         const horas = Math.floor(antiguedadMs / (1000 * 60 * 60));
         const minutos = Math.floor((antiguedadMs % (1000 * 60 * 60)) / (1000 * 60));
         const segundos = Math.floor((antiguedadMs % (1000 * 60)) / 1000);
 
-        //convertimos la fecha al uso horario de CDMX
-        const inicioCDMX= moment(inicio).tz('America/Mexico_City').format('YYYY-MM-DD HH:mm:ss');
-        const ultimoCDMX= moment(ultimoAcceso).tz('America/mexico_City').format('YYYY-MM-DD HH:mm:ss');
+        // Convertimos las fechas al huso horario de CDMX
+        const inicioCDMX = moment(inicio).tz('America/Mexico_City').format('YYYY-MM-DD HH:mm:ss');
+        const ultimoAccesoCDMX = moment(ultimoAcceso).tz('America/Mexico_City').format('YYYY-MM-DD HH:mm:ss');
 
         res.json({
-            mensaje: 'Estado de la sesión',
-            sesionID: req.sessionID,
-            inicio: inicio.toISOString(),
-            ultimoAcceso: ultimoAcceso.toISOString(),
-            antiguedad: `${horas} horas, ${minutos} minutos, ${segundos} segundos`,
+            mensaje: `Estado de la sesión`,
+            sesionId: req.session.id, // Cambiado para mostrar solo el ID
+            inicio: inicioCDMX,
+            ultimoAcceso: ultimoAccesoCDMX,
+            antiguedad: `${horas} horas, ${minutos} minutos, ${segundos} segundos`
         });
     } else {
         res.send('No hay una sesión activa');
     }
 });
+
 
 // Ruta para cerrar la sesión
 app.get('/cerrar-sesion', (req, res) => {
@@ -82,7 +87,7 @@ app.get('/cerrar-sesion', (req, res) => {
     }
 });
 
-// Iniciar servidor
+// Iniciar servidorr
 const PORT = 3000;
 app.listen(PORT, () => {
     console.log(`Servidor ejecutándose en http://localhost:${PORT}`);
